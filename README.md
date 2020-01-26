@@ -33,17 +33,36 @@ Options:
 $ whatsapp-media-decrypt -o Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.mp4 -t 2 Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.enc 0A2069A349914734B9359DA0CD8923E6DFDE06F1E2BCE23222C738C521570BA8242A1220A1F5AEB2E620F73007FA853200559B2669455BB5818F619397C638042D8F7F2A18B984A5F1052000
 ```
 
-### Acquire ChatStorage.sqlite
+### iOS - Get media key
+
+#### Acquire ChatStorage.sqlite
 
 This is left as an exercise for the reader.
 
-### Extract mediaKey
+#### Extract mediaKey
 
 ```
 $ sqlite ChatStorage.sqlite
 SQLite version 3.27.2 2019-03-09 15:45:46
 Enter ".help" for usage hints.
 sqlite> select ZMEDIAURL,ZVCARDSTRING,hex(ZMEDIAKEY) from ZWAMEDIAITEM where Z_PK = 1795;
+https://mmg-fna.whatsapp.net/d/f/Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.enc|video/mp4|0A2069A349914734B9359DA0CD8923E6DFDE06F1E2BCE23222C738C521570BA8242A1220A1F5AEB2E620F73007FA853200559B2669455BB5818F619397C638042D8F7F2A18B984A5F1052000
+sqlite> .quit
+```
+
+### Android - Get media key
+
+#### Acquire msgstore.db
+
+(Left as an exercise for the reader)
+
+#### Extract mediaKey
+
+```
+$ sqlite msgstore.db
+SQLite version 3.27.2 2019-03-09 15:45:46
+Enter ".help" for usage hints.
+sqlite> select message_url,mime_type,hex(media_key) from message_media where message_row_id = 1337;
 https://mmg-fna.whatsapp.net/d/f/Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.enc|video/mp4|0A2069A349914734B9359DA0CD8923E6DFDE06F1E2BCE23222C738C521570BA8242A1220A1F5AEB2E620F73007FA853200559B2669455BB5818F619397C638042D8F7F2A18B984A5F1052000
 sqlite> .quit
 ```

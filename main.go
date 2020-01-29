@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -34,12 +35,19 @@ var (
 )
 
 func main() {
-	mt := flag.Int("t", 0, "media `type` (1 = image, 2 = video, 3 = audio, 4 = doc)")
-	outputFileName := flag.String("o", "", "write decrypted output to `file`")
+	var Usage = func() {
+		fmt.Fprintf(os.Stderr,
+			"Usage: %s -o FILE -t TYPE ENCFILE HEXMEDIAKEY\n\nOptions:\n",
+			os.Args[0])
+		flag.PrintDefaults()
+	}
+
+	mt := flag.Int("t", 0, "media `TYPE` (1 = image, 2 = video, 3 = audio, 4 = doc)")
+	outputFileName := flag.String("o", "", "write decrypted output to `FILE`")
 	flag.Parse()
 
 	if *mt == 0 || len(*outputFileName) == 0 || flag.NArg() < 2 {
-		flag.Usage()
+		Usage()
 		os.Exit(1)
 	}
 
@@ -58,28 +66,34 @@ func decryptMediaFile(encFilePath string, hexMediaKey string, mt mediaType) (
 	[]byte,
 	error,
 ) {
-	encFile, err := ioutil.ReadFile(encFilePath)
+	encFileData, err := ioutil.ReadFile(encFilePath)
 	if err != nil {
 		return nil, err
 	}
 
-	mediaKey, err := hex.DecodeString(hexMediaKey)
+	mediaKeyBlob, err := hex.DecodeString(hexMediaKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(mediaKey) != 32 {
-		// Assume it's hex(ZMEDIAKEY) from ZWAMEDIAITEM table
-		if mediaKey[0] == 0x0A && mediaKey[1] == 0x20 {
-			// XXX: Not sure what the encoding and rest are,
-			// but this is where the raw key is
-			mediaKey = mediaKey[2 : 2+32]
-		} else {
-			return nil, fmt.Errorf("unknown mediaKey format")
-		}
+	if len(mediaKeyBlob) != 76 ||
+		mediaKeyBlob[0] != 0x0A || mediaKeyBlob[1] != 0x20 ||
+		mediaKeyBlob[34] != 0x12 || mediaKeyBlob[35] != 0x20 {
+		return nil, fmt.Errorf("unknown mediaKey format")
 	}
 
-	data, err := decryptMedia(encFile, mediaKey, mt)
+	mediaKey := mediaKeyBlob[2 : 2+32]
+	fileHash := mediaKeyBlob[36 : 36+32]
+
+	// Verify the fileHash of the .enc file data
+	h := sha256.New()
+	h.Write(encFileData)
+	encFileHash := h.Sum(nil)
+	if !bytes.Equal(encFileHash, fileHash) {
+		return nil, fmt.Errorf(".enc file hash does not match mediaKey")
+	}
+
+	data, err := decryptMedia(encFileData, mediaKey, mt)
 	if err != nil {
 		return nil, err
 	}
@@ -87,10 +101,11 @@ func decryptMediaFile(encFilePath string, hexMediaKey string, mt mediaType) (
 	return data, err
 }
 
-func decryptMedia(encFile []byte, mediaKey []byte, mt mediaType) (
+func decryptMedia(encFileData []byte, mediaKey []byte, mt mediaType) (
 	[]byte,
 	error,
 ) {
+	//
 	// Implement reverse engineered media decryption algorithm from:
 	// https://github.com/sigalor/whatsapp-web-reveng#decryption
 	//
@@ -111,9 +126,9 @@ func decryptMedia(encFile []byte, mediaKey []byte, mt mediaType) (
 	macKey := mediaKeyExpanded[48:80]
 	//refKey := mediaKeyExpanded[80:]
 
-	fileLen := len(encFile) - 10
-	file := encFile[:fileLen]
-	mac := encFile[fileLen:]
+	fileLen := len(encFileData) - 10
+	file := encFileData[:fileLen]
+	mac := encFileData[fileLen:]
 
 	err = validateMedia(iv, file, macKey, mac)
 	if err != nil {

@@ -18,11 +18,13 @@ $ go get github.com/ddz/whatsapp-media-decrypt
 ## Usage
 
 ```
-Usage of whatsapp-media-decrypt:
-  -o file
-    	write decrypted output to file
-  -t type
-    	media type (1 = image, 2 = video, 3 = audio, 4 = doc)
+Usage: ./whatsapp-media-decrypt -o FILE -t TYPE ENCFILE HEXMEDIAKEY
+
+Options:
+  -o FILE
+    	write decrypted output to FILE
+  -t TYPE
+    	media TYPE (1 = image, 2 = video, 3 = audio, 4 = doc)
 ```
 
 ## Example
@@ -33,7 +35,7 @@ $ whatsapp-media-decrypt -o Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.mp4 -t 
 
 ### Acquire ChatStorage.sqlite
 
-(Left as an exercise for the reader)
+This is left as an exercise for the reader.
 
 ### Extract mediaKey
 
@@ -61,8 +63,35 @@ $ curl -O https://mmg-fna.whatsapp.net/d/f/Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SY
 $ whatapp-media-decrypt -o Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.mp4 -t 2 ./Atzc5Drr8l7ngis8GmUTMI6vMQNjOU9zGQ2SYRkjwq44.enc 0A2069A349914734B9359DA0CD8923E6DFDE06F1E2BCE23222C738C521570BA8242A1220A1F5AEB2E620F73007FA853200559B2669455BB5818F619397C638042D8F7F2A18B984A5F1052000
 ```
 
+## FAQ
+
+### Does this break WhatsApp encryption?
+
+No. WhatsApp's encryption is end-to-end, which ensures that only the
+sender and recipient can read the message and especially not any
+servers (or attackers!) in-between them. This uses a cryptographic key
+stored on one of the endpoints to decrypt a media attachment in the
+same way that the WhatsApp app does to display it on the screen.
+
+### Does this mean my WhatsApp media files are not encrypted at rest?
+
+No. WhatsApp uses [iOS Data
+Protection](https://support.apple.com/guide/security/how-data-files-are-created-and-protected-sece8608431d/1/web/1)
+to encrypt user data files (including `ChatStorage.sqlite`) using the
+device-specific and unrecoverable hardware UID key as well as a key
+derived from the user's passcode. It may not be decrypted without
+physical access to the specific iOS device that created the file as
+well as knowledge of the user's passcode.
+
+### Can you help me decrypt someone's WhatsApp?
+
+No.
+
 ## References
+Engelke, Lucas. [go-whatsapp](https://github.com/Rhymen/go-whatsapp)
 
-[WhatsApp Web Reverse Engineered](https://github.com/sigalor/whatsapp-web-reveng)
+Marczak, Bill. "[Some Directions for Further Investigation in the Bezos Hack Case](https://medium.com/@billmarczak/bezos-hack-mbs-mohammed-bin-salman-whatsapp-218e1b4e1242)"
 
-[go-whatsapp](https://github.com/Rhymen/go-whatsapp)
+Sigalor. [WhatsApp Web Reverse Engineered](https://github.com/sigalor/whatsapp-web-reveng)
+
+WhatsApp. [WhatsApp Encryption Overview](https://www.whatsapp.com/security/WhatsApp-Security-Whitepaper.pdf)

@@ -76,21 +76,28 @@ func decryptMediaFile(encFilePath string, hexMediaKey string, mt mediaType) (
 		return nil, err
 	}
 
-	if len(mediaKeyBlob) != 76 ||
+	var mediaKey []byte
+	var fileHash []byte
+
+	if len(mediaKeyBlob) == 32 {
+		mediaKey = mediaKeyBlob
+	} else if len(mediaKeyBlob) != 76 ||
 		mediaKeyBlob[0] != 0x0A || mediaKeyBlob[1] != 0x20 ||
 		mediaKeyBlob[34] != 0x12 || mediaKeyBlob[35] != 0x20 {
 		return nil, fmt.Errorf("unknown mediaKey format")
+	} else {
+		mediaKey = mediaKeyBlob[2 : 2+32]
+		fileHash = mediaKeyBlob[36 : 36+32]
 	}
 
-	mediaKey := mediaKeyBlob[2 : 2+32]
-	fileHash := mediaKeyBlob[36 : 36+32]
-
-	// Verify the fileHash of the .enc file data
-	h := sha256.New()
-	h.Write(encFileData)
-	encFileHash := h.Sum(nil)
-	if !bytes.Equal(encFileHash, fileHash) {
-		return nil, fmt.Errorf(".enc file hash does not match mediaKey")
+	if len(fileHash) > 0 {
+		// Verify the fileHash of the .enc file data
+		h := sha256.New()
+		h.Write(encFileData)
+		encFileHash := h.Sum(nil)
+		if !bytes.Equal(encFileHash, fileHash) {
+			return nil, fmt.Errorf(".enc file hash does not match mediaKey")
+		}
 	}
 
 	data, err := decryptMedia(encFileData, mediaKey, mt)

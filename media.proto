@@ -1,0 +1,17 @@
+syntax = "proto2";
+package main;
+
+message MediaKey {
+        // Media key to be used as described by:
+        // https://github.com/sigalor/whatsapp-web-reveng#decryption
+        optional string mediaKey = 1;
+
+        // SHA-256 hash of .enc file
+        optional string fileEncSha256 = 2;
+
+        // This is a Unix epoch timestamp of something
+        optional int64 timestamp = 3;
+
+        // No idea what the significance of this boolean field is
+        optional bool foo = 4;
+}
